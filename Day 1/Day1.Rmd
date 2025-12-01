@@ -1,0 +1,86 @@
+---
+title: "Day 1 Notebook"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+library(igraph)
+library(ggplot2)
+library(rgl)
+library(ggraph)
+library(reshape2)
+library(knitr)
+library(dplyr)
+library(stringr)
+library(tidyverse)
+library(readr)
+library(collections)
+options(scipen = 999)
+```
+
+```{r}
+input<-read_lines("Day1Sample.txt")
+#input<-read_lines("../../AoCData/AOC2025/Day1.txt")
+
+```
+
+Get password counts the number of times the dial is at 0.
+
+```{r}
+getpassword<-function(dial){
+  #start with a password of 0
+  zerocounter<-0
+  #start position at 50
+  current<-50
+  # for each instruction, add the number of clicks if it goes right, subract if it goes left
+  # because the dial is round, 100=0, so mod will give the real position.
+  for(i in 1:length(dial)){
+    d<-str_sub(dial[i],1,1)
+    clicks<-as.numeric(str_sub(dial[i],start=2))
+    clicks<-clicks%%100
+    if(d=="R"){current<-current+clicks}else{current<-current-clicks}
+    current<-current%%100
+#   cat(d,clicks,current,"\n")
+    if(current==0){zerocounter<-zerocounter+1}}
+  zerocounter}
+```
+
+```{r}
+getpassword(input)
+```
+
+For part 2, instead raise the counter every time it crosses 0.
+
+```{r}
+getpassword<-function(dial){
+  #start with a password of 0
+  zerocounter<-0
+  #start position at 50
+  current<-50
+  # for each instruction, add the number of clicks if it goes right, subract if it goes left
+  # because the dial is round, 100=0, so mod will give the real position.
+  for(i in 1:length(dial)){
+    d<-str_sub(dial[i],1,1)
+    clicks<-as.numeric(str_sub(dial[i],start=2))
+    ### add to zero counter for every full turn
+    zerocounter<-zerocounter + clicks%/%100
+    ### just deal with the partial turn
+    clicks<-clicks%%100
+    if(d=="R"){
+      current<-current+clicks
+      if(current>=100){zerocounter<-zerocounter+1}
+    }else{
+      ### a cheat so that if we go left after a 0, it still works.
+      if(current==0){current<-100}
+      current<-current-clicks
+      if(current<=0){zerocounter<-zerocounter+1}}
+    current<-current%%100
+   #cat(d,clicks,current,zerocounter,"\n")
+   }
+  zerocounter}
+```
+
+```{r}
+getpassword(input)
+```
+
