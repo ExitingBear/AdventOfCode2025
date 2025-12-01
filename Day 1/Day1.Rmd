@@ -4,10 +4,10 @@ output: html_notebook
 ---
 
 ```{r setup, include=FALSE}
-library(igraph)
+library(gganimate)
 library(ggplot2)
-library(rgl)
 library(ggraph)
+library(ggforce)
 library(reshape2)
 library(knitr)
 library(dplyr)
@@ -83,4 +83,93 @@ getpassword<-function(dial){
 ```{r}
 getpassword(input)
 ```
+![](dial.gif)
 
+
+
+```{r include = FALSE}
+bigspoke<-data.frame(x=9.5,y=0,a=0)
+labelspoke<-data.frame(x=11,y=0,l="25")
+
+newspoke<-c(9.5,0,0)
+for(i in 1:99){
+  a<-i*(2*pi/100)
+  bigspoke<-rbind(bigspoke,
+                  c(x=round(newspoke[1]*cos(a)-newspoke[2]*sin(a),3),
+                    y=round(newspoke[1]*sin(a)+newspoke[2]*cos(a),3),
+                    a=a))
+  labelspoke<-rbind(labelspoke,
+                  c(x=round((newspoke[1]+1.5)*cos(a)-newspoke[2]*sin(a),3),
+                    y=round((newspoke[1]+1.5)*sin(a)+newspoke[2]*cos(a),3),
+                    l=(25-i)%%100))}
+```
+
+
+```{r include = FALSE}
+visarrow<-function(dial){
+  #starting values
+  current<-50
+  totalclicks<-0
+  landed<-0
+  passed<-0
+  arrow_color<-"black"
+  outdf<-data.frame(p=current,t=totalclicks,passed=passed,landed=landed,ins="Start",ac=arrow_color)
+  for(i in 1:length(dial)){
+    d<-str_sub(dial[i],1,1)
+    clicks<-as.numeric(str_sub(dial[i],start=2))
+    for(j in 1:clicks){
+      arrow_color<-"black"
+      totalclicks<-totalclicks+1
+      if(d=="L"){
+        if(current==0){current<-99}else{current<-current-1}
+      }else{
+        if(current==99){current<-0}else{current<-current+1}}
+      if(current==0){
+        passed<-passed+1
+        arrow_color="blue"
+        if(j==clicks){landed<-landed+1
+        arrow_color="red"
+        }}
+      dfline<-data.frame(p=current,t=totalclicks,passed=passed,landed=landed,ins=dial[i],ac=arrow_color)
+      outdf<-rbind(outdf,dfline)}
+    ### add pause between states
+    totalclicks<-totalclicks+1
+    dfline<-data.frame(p=current,t=totalclicks,passed=passed,landed=landed,ins=dial[i],ac=arrow_color)
+    outdf<-rbind(outdf,dfline)}
+  outdf}
+```
+
+```{r include = FALSE}
+arrowvisualization<-visarrow(input)
+
+arrowvisualization<-arrowvisualization %>% 
+  mutate(aangle=(((25-p)%%100)*2*pi/100)) %>%
+  mutate(ltext=str_c(" landed:",landed,"\n","passed:",passed,sep=" "))
+```
+
+```{r include = FALSE}
+movingarrow<-ggplot()+
+  geom_circle(aes(x0=0,y0=0,r=10))+
+  geom_spoke(data=bigspoke,aes(x=x,y=y,angle=a,radius=1))+
+  geom_text(data=labelspoke,aes(x=x,y=y,label=l),size=2.5)+
+  geom_spoke(data=arrowvisualization,aes(x=0,y=0,angle=aangle,radius=8),
+             color=arrowvisualization$ac,size=4,
+             arrow=arrow(angle = 30, length = unit(0.25, "inches"),ends = "last", type = "open"))+
+  geom_text(data=arrowvisualization,aes(x=-12,y=-12,label=ins))+
+  geom_text(data=arrowvisualization,aes(x=8,y=-12,label=ltext))+
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.position="none")+
+  transition_states(t,wrap=FALSE)
+```
+
+
+```{r include = FALSE}
+anim_save("dial.gif",animate(movingarrow,nframes=200, end_pause = 15))
+```
