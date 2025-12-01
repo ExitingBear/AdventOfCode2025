@@ -1,0 +1,50 @@
+---
+title: "Day XX Notebook"
+output: html_notebook
+---
+
+```{r setup, include=FALSE}
+library(igraph)
+library(ggplot2)
+library(rgl)
+library(ggraph)
+library(reshape2)
+library(knitr)
+library(dplyr)
+library(stringr)
+library(tidyverse)
+library(readr)
+library(collections)
+options(scipen = 999)
+```
+
+```{r}
+input<-read_lines("DayXXSample.txt")
+#input<-read_lines("../../AoCData/AOC2025/DayXX.txt")
+
+```
+
+```{r}
+### Matrix
+diagnosticreport<-matrix(0,nrow=length(input),ncol=nchar(input[1]))
+for(i in 1:length(input)){diagnosticreport[i,]<-as.numeric(unlist(str_split(input[i],"")))}
+
+```
+
+
+```{r,echo=FALSE}
+basicgraph<-ggplot()+
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.position="none")+
+  scale_y_reverse()+
+  coord_fixed()
+basicgraph
+```
+
