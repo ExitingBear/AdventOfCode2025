@@ -20,8 +20,6 @@ options(scipen = 999)
 
 ```{r}
 input<-read_lines("Day1Sample.txt")
-#input<-read_lines("../../AoCData/AOC2025/Day1.txt")
-
 ```
 
 Get password counts the number of times the dial is at 0.
@@ -40,7 +38,6 @@ getpassword<-function(dial){
     clicks<-clicks%%100
     if(d=="R"){current<-current+clicks}else{current<-current-clicks}
     current<-current%%100
-#   cat(d,clicks,current,"\n")
     if(current==0){zerocounter<-zerocounter+1}}
   zerocounter}
 ```
@@ -75,7 +72,6 @@ getpassword<-function(dial){
       current<-current-clicks
       if(current<=0){zerocounter<-zerocounter+1}}
     current<-current%%100
-   #cat(d,clicks,current,zerocounter,"\n")
    }
   zerocounter}
 ```
@@ -83,7 +79,7 @@ getpassword<-function(dial){
 ```{r}
 getpassword(input)
 ```
-![](dial.gif)
+![Dial](dial.gif)
 
 
 
@@ -166,6 +162,7 @@ movingarrow<-ggplot()+
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
         legend.position="none")+
+  coord_fixed()+
   transition_states(t,wrap=FALSE)
 ```
 
