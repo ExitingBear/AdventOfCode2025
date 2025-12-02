@@ -1,5 +1,5 @@
 ---
-title: "Day XX Notebook"
+title: "Day 2 Notebook"
 output: html_notebook
 ---
 
@@ -19,32 +19,91 @@ options(scipen = 999)
 ```
 
 ```{r}
-input<-read_lines("DayXXSample.txt")
-#input<-read_lines("../../AoCData/AOC2025/DayXX.txt")
+input<-read_lines("Day2Sample.txt")
 
+idranges<-as_vector(str_split(input,","))
+```
+
+Part 1
+
+Takes in a range, gives out the number of repeated numbers
+```{r}
+finddoubles<-function(r){
+  curr<-as.numeric(str_split_i(r,"-",i = 1))
+  counter<-0
+  upper<-as.numeric(str_split_i(r,"-",2))
+  while(curr<=upper){
+    ### find out how many digits - if odd, go to next 1010 or 100100, etc.
+    evendigits<-floor(log10(curr))
+    if(evendigits%%2==0){
+      curr<-10^(evendigits+1)+10^(evendigits/2)
+      next}
+    ### otherwise, split into two halves (which can be done, because there's an even number of digits)
+    ### find the smallest valid value >= current.
+    ### then add 1 to the first half and keep going up until it hits the upper limit.
+    ### there is a lot of redundancy in this loop.
+    ed2<-(evendigits+1)/2
+    ed2<-10^ed2
+    fronthalf<-curr%/%ed2
+    backhalf<-curr%%ed2
+    if(fronthalf>backhalf){
+      curr<-fronthalf*ed2+fronthalf
+    }else if(backhalf>fronthalf){
+      curr<-((fronthalf+1)*ed2)+fronthalf+1
+    }else{
+      counter<-counter+curr
+      curr<-((fronthalf+1)*ed2)+fronthalf+1}}
+    counter}
+```
+
+
+Takes in all of the ranges and returns the sum of all of the ids
+```{r}
+add_all_ids<-function(rns){
+  allids<-sum(sapply(rns,finddoubles))
+  allids}
+
+add_all_ids(idranges)
+```
+Part 2
+
+I saw it coming.  I just had a feeling that this was going to be part 2. And yet, I did nothing to prepare for it in advance.
+I can't think of any way to not check every number.
+
+This tells me if a number is a repeater.
+```{r}
+isrepeater<-function(n){
+  #comparing strings. this is non-optimal, but it does work.
+  n<-as.character(n)
+  l<-nchar(n)
+  for(i in 1:(l/2)){
+    ### if this won't go evenly in, don't bother.
+    if(l%%i!=0){next}
+    a<-str_sub(n,1,i)
+    a<-str_flatten(rep(a,l/i))
+    if(a==n){return(TRUE)}}
+  FALSE}
 ```
 
 ```{r}
-### Matrix
-diagnosticreport<-matrix(0,nrow=length(input),ncol=nchar(input[1]))
-for(i in 1:length(input)){diagnosticreport[i,]<-as.numeric(unlist(str_split(input[i],"")))}
-
+reprange<-function(r){
+  repeaters<-c()
+  ### ignore 1 digit numbers
+  lower<-max(as.numeric(str_split_i(r,"-",1)),11)
+  upper<-as.numeric(str_split_i(r,"-",2))
+  if(upper>=lower){
+    for(i in lower:upper){
+      if(isrepeater(i)){repeaters<-c(repeaters,i)}}}
+  repeaters}
 ```
 
 
-```{r,echo=FALSE}
-basicgraph<-ggplot()+
-  theme(axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks.y = element_blank(),
-        axis.title.y = element_blank(),
-        axis.title.x = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        legend.position="none")+
-  scale_y_reverse()+
-  coord_fixed()
-basicgraph
+```{r}
+findallrepeaters<-function(rs){
+  allreps<-sum(unname(unlist(sapply(rs,reprange))))
+  allreps}
 ```
 
+```{r}
+findallrepeaters(idranges)
+```
