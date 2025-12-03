@@ -1,5 +1,5 @@
 ---
-title: "Day XX Notebook"
+title: "Day 3 Notebook"
 output: html_notebook
 ---
 
@@ -19,32 +19,61 @@ options(scipen = 999)
 ```
 
 ```{r}
-input<-read_lines("DayXXSample.txt")
-#input<-read_lines("../../AoCData/AOC2025/DayXX.txt")
+input<-read_lines("Day3Sample.txt")
 
+batterybank<-lapply(input,function(x){
+  a<-as.numeric(unlist(str_split(x,"")))
+})
+```
+
+Part 1
+
+### find the max joltage
+
+```{r}
+batterymax<-function(bank){
+  tensdigit<-max(bank[1:(length(bank)-1)])
+  tensdigitplace<-which.max(bank[1:(length(bank)-1)])
+  onesdigit<-max(bank[(tensdigitplace+1):length(bank)])
+  return(tensdigit*10+onesdigit)}
+
+```
+
+
+```{r}
+totaljoltage<-function(batterybank){
+  tj<-sum(sapply(batterybank,batterymax))
+  tj}
 ```
 
 ```{r}
-### Matrix
-diagnosticreport<-matrix(0,nrow=length(input),ncol=nchar(input[1]))
-for(i in 1:length(input)){diagnosticreport[i,]<-as.numeric(unlist(str_split(input[i],"")))}
-
+totaljoltage(batterybank)
 ```
 
+Part 2
+Pretty much the same, except instead of leaving out the last digit, leave out the last 11 (and then work down)
 
-```{r,echo=FALSE}
-basicgraph<-ggplot()+
-  theme(axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks.y = element_blank(),
-        axis.title.y = element_blank(),
-        axis.title.x = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        legend.position="none")+
-  scale_y_reverse()+
-  coord_fixed()
-basicgraph
+```{r}
+multidigitjolt<-function(bank,digits){
+  tj<-0
+  for(i in (digits-1):1){
+    tj<-tj*10
+    nextdigit<-max(head(bank,-i))
+    tj<-tj+nextdigit
+    nextdigitplace<-which.max(head(bank,-i))
+    bank<-bank[-(1:nextdigitplace)]}
+  tj<-(tj*10)+max(bank)
+  
+tj}
+```
+
+```{r}
+totaljoltagemulti<-function(batterybank,d){
+  tj<-sum(sapply(batterybank,function(x){multidigitjolt(x,d)}))
+  tj}
+```
+
+```{r}
+totaljoltagemulti(batterybank,12)
 ```
 
