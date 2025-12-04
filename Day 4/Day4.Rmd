@@ -1,50 +1,70 @@
 ---
-title: "Day XX Notebook"
+title: "Day 4 Notebook"
 output: html_notebook
 ---
 
 ```{r setup, include=FALSE}
-library(igraph)
-library(ggplot2)
-library(rgl)
+library(gganimate)
 library(ggraph)
-library(reshape2)
 library(knitr)
 library(dplyr)
 library(stringr)
 library(tidyverse)
 library(readr)
-library(collections)
 options(scipen = 999)
 ```
 
 ```{r}
-input<-read_lines("DayXXSample.txt")
-#input<-read_lines("../../AoCData/AOC2025/DayXX.txt")
+input<-read_lines("Day4Sample.txt")
+```
+
+
+## Part 1
+
+```{r}
+### Setup
+### replace "." with 0 & "@" with 1
+
+room<-matrix(0,nrow=length(input)+2,ncol=nchar(input[1])+2)
+for(i in 1:length(input)){
+  r<-str_replace_all(str_replace_all(input[i],"@","1"),"\\.","0")
+  room[(i+1),]<-c(0,as.numeric(unlist(str_split(r,""))),0)}
 
 ```
 
 ```{r}
-### Matrix
-diagnosticreport<-matrix(0,nrow=length(input),ncol=nchar(input[1]))
-for(i in 1:length(input)){diagnosticreport[i,]<-as.numeric(unlist(str_split(input[i],"")))}
+forkliftable<-function(room){
+  can_access<-0
+  for(i in 2:(ncol(room)-1)){
+    for(j in 2:(nrow(room)-1)){
+      if(room[i,j]==1&&(sum(room[(i-1):(i+1),(j-1):(j+1)]))<=4){
+        can_access<-can_access+1}}}
+  can_access}
+```
 
+```{r}
+forkliftable(room)
+```
+## Part 2
+
+```{r}
+paperless<-function(room){
+  startingamount<-sum(room)
+  doneyet<-FALSE
+  counter<-0
+  while(!doneyet){
+    doneyet<-TRUE
+    nextroom<-room
+    for(i in 2:(ncol(room)-1)){
+      for(j in 2:(nrow(room)-1)){
+        if(room[i,j]==1&&(sum(room[(i-1):(i+1),(j-1):(j+1)]))<=4){
+          nextroom[i,j]<-0
+          doneyet<-FALSE}}}
+    room<-nextroom}
+  startingamount-sum(room)}
 ```
 
 
-```{r,echo=FALSE}
-basicgraph<-ggplot()+
-  theme(axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks.y = element_blank(),
-        axis.title.y = element_blank(),
-        axis.title.x = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        legend.position="none")+
-  scale_y_reverse()+
-  coord_fixed()
-basicgraph
+```{r}
+paperless(room)
 ```
-
