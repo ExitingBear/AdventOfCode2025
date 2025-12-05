@@ -68,3 +68,5 @@ paperless<-function(room){
 ```{r}
 paperless(room)
 ```
+
+![](forklifted.gif)
