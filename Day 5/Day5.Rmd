@@ -1,50 +1,105 @@
 ---
-title: "Day XX Notebook"
+title: "Day 5 Notebook"
 output: html_notebook
 ---
 
 ```{r setup, include=FALSE}
-library(igraph)
 library(ggplot2)
-library(rgl)
-library(ggraph)
-library(reshape2)
 library(knitr)
 library(dplyr)
 library(stringr)
 library(tidyverse)
 library(readr)
-library(collections)
 options(scipen = 999)
 ```
 
-```{r}
-input<-read_lines("DayXXSample.txt")
-#input<-read_lines("../../AoCData/AOC2025/DayXX.txt")
-
-```
+Setup
 
 ```{r}
-### Matrix
-diagnosticreport<-matrix(0,nrow=length(input),ncol=nchar(input[1]))
-for(i in 1:length(input)){diagnosticreport[i,]<-as.numeric(unlist(str_split(input[i],"")))}
-
+input<-read_lines("Day5Sample.txt")
 ```
 
 
-```{r,echo=FALSE}
-basicgraph<-ggplot()+
-  theme(axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks.y = element_blank(),
-        axis.title.y = element_blank(),
-        axis.title.x = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        legend.position="none")+
-  scale_y_reverse()+
-  coord_fixed()
-basicgraph
+```{r}
+separator<-which(input=="")
+binranges<-input[1:(separator-1)]
+binranges<-lapply(binranges,function(x){
+  as.numeric(unlist(str_split(x,"-")))})
+ingredients<-as.numeric(input[-(1:separator)])
+```
+
+##Part 1
+
+```{r}
+freshcounter<-function(br,i){
+  ### I think for part 1, it seems to make sense that I'll just go through the bins and remove any number that fits
+  ### then compare the ingredients before to the ingredients after for how many were fresh 
+  startingsize<-length(i)
+  for(j in 1:length(br)){
+    currentbin<-br[[j]]
+    k<-intersect(which(i>=currentbin[1]),
+                 which(i<=currentbin[2]))
+    if(length(k)>0){i<-i[-k]}}
+  fresh<-startingsize-length(i)
+  fresh}
+```
+
+```{r}
+freshcounter(binranges,ingredients)
+```
+##Part 2
+
+The big picture is to combine the ranges and then see how big they are.
+
+Sorts bins by first number then second number
+
+```{r}
+binsorter<-function(br){
+  ## first order by second number
+  x<-sapply(br,function(x){x[2]})
+  br<-br[order(x)]
+  x<-sapply(br,function(x){x[1]})
+  br<-br[order(x)]
+  br}
+```
+
+Takes in two bins. Combines them if they overlap, returns separate bins if they do not. It assumes that b1's first element is lower or equal to b2's first element. 
+
+```{r}
+binsmusher<-function(b1,b2){
+  ### if the first ends before the second begins, return both.
+  if(b1[2]<b2[1]){
+    return(list(b1,b2))
+  }else if(b2[2]<=b1[2]){
+    return(list(b1))
+  }else if(b1[2]>=b2[1]){
+    return(list(c(b1[1],b2[2])))}
+return(1)}    
+  
+```
+
+
+Combines sorter and smusher take the full list of bins and end up with a smaller, non-overlapping list
+
+```{r}
+bincollapse<-function(br){
+  br<-binsorter(br)
+  outbin<-list()
+  working<-br[[1]]
+  for(j in 2:length(br)){
+    k<-binsmusher(working,br[[j]])
+    if(length(k)==2){
+      working<-k[[2]]
+      outbin<-append(outbin,list(k[[1]]))
+    }else{working<-k[[1]]}}
+  outbin<-append(outbin,list(working))
+  outbin}
+```
+
+
+```{r}
+reducedranges<-bincollapse(binranges)
+freshids<-sum(sapply(reducedranges,function(x){x[2]-x[1]+1}))
+freshids
 ```
 
