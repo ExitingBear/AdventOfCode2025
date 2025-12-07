@@ -1,50 +1,143 @@
 ---
-title: "Day XX Notebook"
+title: "Day 7 Notebook"
 output: html_notebook
 ---
 
 ```{r setup, include=FALSE}
-library(igraph)
+library(gganimate)
 library(ggplot2)
-library(rgl)
-library(ggraph)
-library(reshape2)
 library(knitr)
 library(dplyr)
 library(stringr)
 library(tidyverse)
 library(readr)
 library(collections)
+library(memoise)
 options(scipen = 999)
 ```
 
 ```{r}
-input<-read_lines("DayXXSample.txt")
-#input<-read_lines("../../AoCData/AOC2025/DayXX.txt")
+input<-read_lines("Day7Sample.txt")
+```
 
+
+## Setup
+
+Find the starting space
+Find the splitters
+Find the lowest point
+Yes, I'm storing everything as a string because when I do not, something goes awry and I haven't been able to figure out exactly what. Once I do, that will be a much, much, much better way to store things.
+```{r}
+splitter<-dict()
+for(i in 1:length(input)){
+  x<-input[i]
+  for(j in 1:nchar(x)){
+    y<-str_sub(x,j,j)
+    if(y=="S"){
+      starter<-str_c(j,i,sep="~")
+    }else if(y=="^"){splitter$set(str_c(j,i,sep="~"),0)}}}
+bottom<-(length(input))
+```
+
+
+## Part 1
+Count how many times that a beam hits a splitter
+
+```{r}
+beamsplitter<-function(st,spl,bottom){
+  ### create queue
+  q<-queue()
+  ### create dictionary
+  beenthere<-dict()
+  ### count the splitters
+  splitcount<-0
+  q$push(st)
+  while(q$size()>0){
+    b<-q$pop()
+    ### if already visited, next
+    if(beenthere$has(b)){next
+    }else{beenthere$set(b,0)}
+    x<-as.numeric(str_split_i(b,"~",1))
+    y<-as.numeric(str_split_i(b,"~",2))
+    ### if at the bottom, next
+    if(y==bottom){next}
+    ### otherwise if it is a splitter, add to the count and split it
+    if(spl$has(b)){
+      splitcount<-splitcount+1
+      q$push(str_c((x-1),y,sep="~"))
+      q$push(str_c((x+1),y,sep="~"))
+    }else{
+      q$push(str_c(x,y+1,sep="~"))
+    }}
+  splitcount}
 ```
 
 ```{r}
-### Matrix
-diagnosticreport<-matrix(0,nrow=length(input),ncol=nchar(input[1]))
-for(i in 1:length(input)){diagnosticreport[i,]<-as.numeric(unlist(str_split(input[i],"")))}
-
+part1<-beamsplitter(starter,splitter,bottom)
+part1
 ```
 
+## Part 2
+Returns a dictionary of where the splitter splits to (either another splitter or the bottom)
 
-```{r,echo=FALSE}
-basicgraph<-ggplot()+
-  theme(axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks.y = element_blank(),
-        axis.title.y = element_blank(),
-        axis.title.x = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        legend.position="none")+
-  scale_y_reverse()+
-  coord_fixed()
-basicgraph
+```{r}
+shortpath<-function(st,spl,bottom){
+  ### create queue
+  q<-queue()
+  beenthere<-dict()
+  ### create dictionary
+  nextsplit<-dict()
+  ### queue will be where it came from&where it is now
+  q$push(c(st,st))
+  while(q$size()>0){
+    b<-q$pop()
+    startpoint<-b[2]
+    curr<-b[1]
+    x<-as.numeric(str_split_i(b[1],"~",1))
+    y<-as.numeric(str_split_i(b[1],"~",2))
+    ### if at the bottom, add the path to the dictionary
+    if(y==bottom){
+      nextsplit$set(startpoint,c(nextsplit$get(startpoint,c()),curr))
+      next
+    ### if at another splitter, add this path to the dictionary
+    }else if(spl$has(curr)){
+      nextsplit$set(startpoint,c(nextsplit$get(startpoint,c()),curr))
+      ### if we've already started from here, stop.
+      if(beenthere$has(curr)){next
+        }else{
+      ### otherwise, start two paths    
+          beenthere$set(curr,0)
+          q$push(c(str_c((x-1),y,sep="~"),curr))
+          q$push(c(str_c((x+1),y,sep="~"),curr))}
+    }else{
+      q$push(c(str_c(x,y+1,sep="~"),startpoint))}
+  }
+  nextsplit}
+```
+
+```{r}
+a<-shortpath(starter,splitter,bottom)
+```
+
+Uses the dictionary to find out how many paths to the bottom by adding the number of paths from any/all of its children
+
+```{r}
+totalpaths<-function(s,pathdict,bottom){
+  if(str_split_i(s,"~",2)==bottom){
+    return(1)
+  }else{
+    nxt<-pathdict$get(s)
+    return(sum(sapply(nxt,function(x){tpm(x,pathdict,bottom)})))}}
+```
+
+Memoise, because otherwise it will still take forever
+
+```{r}
+tpm<-memoise(totalpaths)
+```
+
+```{r}
+part2<-totalpaths(starter,a,as.character(bottom))
+part2
 ```
 

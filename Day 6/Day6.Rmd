@@ -1,50 +1,100 @@
 ---
-title: "Day XX Notebook"
+title: "Day 6 Notebook"
 output: html_notebook
 ---
 
 ```{r setup, include=FALSE}
-library(igraph)
 library(ggplot2)
-library(rgl)
-library(ggraph)
-library(reshape2)
 library(knitr)
 library(dplyr)
 library(stringr)
 library(tidyverse)
 library(readr)
-library(collections)
 options(scipen = 999)
 ```
 
 ```{r}
-input<-read_lines("DayXXSample.txt")
-#input<-read_lines("../../AoCData/AOC2025/DayXX.txt")
+input<-read_lines("Day6Sample.txt")
 
 ```
 
 ```{r}
-### Matrix
-diagnosticreport<-matrix(0,nrow=length(input),ncol=nchar(input[1]))
-for(i in 1:length(input)){diagnosticreport[i,]<-as.numeric(unlist(str_split(input[i],"")))}
+### Setup
+
+homework_operators<-unlist(str_split(str_squish(input[length(input)])," "))
+
+homework_numbers<-matrix(nrow=length(input)-1,ncol=length(homework_operators))
+for(i in 1:(length(input)-1)){
+  homework_numbers[i,]<-as.numeric(unlist(str_split(str_squish(input[i])," ")))}
 
 ```
 
+## Part 1
 
-```{r,echo=FALSE}
-basicgraph<-ggplot()+
-  theme(axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks.y = element_blank(),
-        axis.title.y = element_blank(),
-        axis.title.x = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        legend.position="none")+
-  scale_y_reverse()+
-  coord_fixed()
-basicgraph
+```{r}
+homework_cheater<-function(nums,ops){
+  grandtotal<-sapply(1:(length(ops)),function(x){
+    if(ops[x]=="+"){sum(nums[,x])
+    }else{prod(nums[,x])}
+  })
+  sum(grandtotal)}
 ```
 
+
+```{r}
+homework_cheater(homework_numbers,homework_operators)
+```
+
+```{r}
+a<-c("6","4"," ")
+b<-c("2","3"," ")
+c<-c("3","1","4")
+
+d<-matrix(c(a,b,c),ncol=3)
+d
+```
+## Part 2
+
+The spaces aren't fixed. The columns aren't fixed. This is evil.
+
+```{r}
+hw_cheat<-function(homework){
+  grandtotal<-0
+  ops<-homework[length(homework)]
+  nums<-homework[1:length(homework)-1]
+  ### this will do all but the final column  
+  while(str_count(ops,"\\*|\\+")>=2){
+    # find the edge of the column
+    e<-str_locate_all(ops,"\\*|\\+")[[1]][2,][1]
+    # get the operation
+    columnop<-str_trim(str_sub(ops,end=e-1))
+    ### get the numbers and transform them
+    prob<-str_sub(nums,end=(e-2))
+    rearranged<-c()
+    for(i in 1:(e-2)){
+      rearranged<-c(rearranged,as.numeric(str_flatten(str_sub(prob,i,i))))}
+    probAnswer<-if(columnop=="+"){
+      sum(rearranged)
+    }else{prod(rearranged)}
+    grandtotal<-grandtotal+probAnswer
+    # move to the next problem
+    nums<-str_sub(nums,start=e)
+    ops<-str_sub(ops,start=e)}
+  ### final column
+  rearranged<-c()
+  for(i in 1:nchar(ops)){
+    rearranged<-c(rearranged,as.numeric(str_flatten(str_sub(nums,i,i))))}
+  probAnswer<-if(str_trim(ops)=="+"){
+    sum(rearranged)
+  }else{prod(rearranged)}
+  grandtotal<-grandtotal+probAnswer
+  grandtotal}
+```
+
+
+
+
+```{r}
+hw_cheat(input)
+```
+9695042567249
