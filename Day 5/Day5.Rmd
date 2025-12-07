@@ -4,6 +4,7 @@ output: html_notebook
 ---
 
 ```{r setup, include=FALSE}
+library(gganimate)
 library(ggplot2)
 library(knitr)
 library(dplyr)
@@ -17,6 +18,7 @@ Setup
 
 ```{r}
 input<-read_lines("Day5Sample.txt")
+input<-read_lines("../../AoCData/AOC2025/Day5.txt")
 ```
 
 
@@ -28,7 +30,7 @@ binranges<-lapply(binranges,function(x){
 ingredients<-as.numeric(input[-(1:separator)])
 ```
 
-##Part 1
+## Part 1
 
 ```{r}
 freshcounter<-function(br,i){
@@ -47,7 +49,7 @@ freshcounter<-function(br,i){
 ```{r}
 freshcounter(binranges,ingredients)
 ```
-##Part 2
+## Part 2
 
 The big picture is to combine the ranges and then see how big they are.
 
@@ -101,5 +103,49 @@ bincollapse<-function(br){
 reducedranges<-bincollapse(binranges)
 freshids<-sum(sapply(reducedranges,function(x){x[2]-x[1]+1}))
 freshids
+```
+
+-------------------------
+
+```{r}
+startinggraph<-as.data.frame(matrix(ncol=6,nrow=0))
+colnames(startinggraph)<-c("xmin","xmax","ymin","ymax","t","g")
+for(i in 1:length(binranges)){
+  br<-binranges[[i]]
+  startinggraph<-rbind(startinggraph,list(xmin=br[1],xmax=br[2],ymin=i+.1,ymax=i+.9,t=0,g=br[1]))}
+```
+
+
+
+
+```{r}
+sortedgraph<-as.data.frame(matrix(ncol=6,nrow=0))
+sortedbins<-binsorter(binranges)
+colnames(sortedgraph)<-c("xmin","xmax","ymin","ymax","t")
+for(i in 1:length(sortedbins)){
+  br<-sortedbins[[i]]
+  sortedgraph<-rbind(sortedgraph,list(xmin=br[1],xmax=br[2],ymin=i+.1,ymax=i+.9,t=1,g=br[1]))}
+```
+
+
+
+
+
+```{r,echo=FALSE}
+basicgraph<-ggplot()+
+  geom_rect(data=rbind(startinggraph,sortedgraph),aes(xmin=xmin,xmax=xmax,ymin=ymin,ymax=ymax,group=g))+
+  theme(axis.text.x = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        axis.title.y = element_blank(),
+        axis.title.x = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        legend.position="none")+
+  scale_y_reverse()+
+  transition_states(t)
+#  coord_fixed()
+basicgraph
 ```
 
