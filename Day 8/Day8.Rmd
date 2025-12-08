@@ -1,10 +1,10 @@
 ---
-title: "Day XX Notebook"
-output: html_notebook
+title: "Day 8"
+output: html_document
 ---
 
 ```{r setup, include=FALSE}
-library(igraph)
+library(RANN)
 library(ggplot2)
 library(rgl)
 library(ggraph)
@@ -19,32 +19,118 @@ options(scipen = 999)
 ```
 
 ```{r}
-input<-read_lines("DayXXSample.txt")
-#input<-read_lines("../../AoCData/AOC2025/DayXX.txt")
+input<-read_lines("Day8Sample.txt")
+
+
+jboxes<-matrix(0,nrow=length(input),ncol=3)
+for(i in 1:length(input)){jboxes[i,]<-as.numeric(unlist(str_split(input[i],",")))}
+
+```
+
+
+## Part 1
+Create the kd tree for the junction boxes
+
+So get the list of distances in order for every single pair 
+```{r}
+alldists<-nn2(jboxes,k=nrow(jboxes))
+
+```
+
+Find the 
+
+```{r}
+smallcircuit<-function(jb,dists,connections){
+  shortestdistances<-as.vector(dists$nn.dists[,2])
+  currentneighbor<-rep(2,nrow(jb))
+  ### 0 is no circuit
+  circuit<-rep(0,nrow(jb))
+  circuitnumber<-1
+  connectorcount<-0
+  while(connectorcount<connections){
+    ### which two are the shortest distances
+    a<-which(shortestdistances==min(shortestdistances))
+    ### update the shortest distance
+    ### update the circuit
+    currentneighbor[a]<-currentneighbor[a]+1
+    shortestdistances[a[1]]<-dists$nn.dists[a[1],currentneighbor[a[1]]]
+    shortestdistances[a[2]]<-dists$nn.dists[a[2],currentneighbor[a[2]]]
+    ### increment the connector count
+    connectorcount<-connectorcount+1
+    ### if they're not in the same circuit or both 0 (not circuited yet), update the circuit
+    if(circuit[a[1]]!=circuit[a[2]]||(circuit[a[1]]==0&&circuit[a[2]]==0)){
+      ### if both 0, make a newcircuit
+      if(circuit[a[1]]==0&&circuit[a[2]]==0){
+        circuit[a[1]]<-circuitnumber
+        circuit[a[2]]<-circuitnumber
+        circuitnumber<-circuitnumber+1
+        ### if only one is 0, have it join the other circuit
+      }else if(circuit[a[1]]==0){
+        circuit[a[1]]<-circuit[a[2]]
+      }else if(circuit[a[2]]==0){
+        circuit[a[2]]<-circuit[a[1]]
+        ### otherwise change everything that matches a1 to a2
+      }else{
+        circuit[which(circuit==circuit[a[1]])]<-circuit[a[2]]}}
+  }
+  circuit}
 
 ```
 
 ```{r}
-### Matrix
-diagnosticreport<-matrix(0,nrow=length(input),ncol=nchar(input[1]))
-for(i in 1:length(input)){diagnosticreport[i,]<-as.numeric(unlist(str_split(input[i],"")))}
-
+p1<-smallcircuit(jboxes,alldists,10)
+clumps<-sort(table(p1),decreasing=TRUE)[2:4]
+clumps
+p1<-prod(clumps)
+p1
 ```
 
 
-```{r,echo=FALSE}
-basicgraph<-ggplot()+
-  theme(axis.text.x = element_blank(),
-        axis.ticks.x = element_blank(),
-        axis.text.y = element_blank(),
-        axis.ticks.y = element_blank(),
-        axis.title.y = element_blank(),
-        axis.title.x = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        legend.position="none")+
-  scale_y_reverse()+
-  coord_fixed()
-basicgraph
+### Part 2
+
+```{r}
+onebigcircuit<-function(jb,dists){
+  shortestdistances<-as.vector(dists$nn.dists[,2])
+  currentneighbor<-rep(2,nrow(jb))
+  ### 0 is no circuit
+  circuit<-rep(0,nrow(jb))
+  circuitnumber<-1
+  concount<-0
+  ### if there's one that isn't 0 and all the rest are equal
+  while(any(circuit!=circuit[1])||sum(circuit)==0){
+    concount<-concount+1
+    ### which two are the shortest distances
+    a<-which(shortestdistances==min(shortestdistances))
+    ### if they're not in the same circuit or they're both 0
+    currentneighbor[a]<-currentneighbor[a]+1
+    shortestdistances[a[1]]<-dists$nn.dists[a[1],currentneighbor[a[1]]]
+    shortestdistances[a[2]]<-dists$nn.dists[a[2],currentneighbor[a[2]]]
+
+    if(circuit[a[1]]!=circuit[a[2]]||(circuit[a[1]]==0&&circuit[a[2]]==0)){
+      ### update the smallest distance
+      ### update the circuit
+      ### if both 0, make a newcircuit
+      if(circuit[a[1]]==0&&circuit[a[2]]==0){
+        circuit[a[1]]<-circuitnumber
+        circuit[a[2]]<-circuitnumber
+        circuitnumber<-circuitnumber+1
+        ### if only one is 0, have it join the other circuit
+      }else if(circuit[a[1]]==0){
+        circuit[a[1]]<-circuit[a[2]]
+      }else if(circuit[a[2]]==0){
+        circuit[a[2]]<-circuit[a[1]]
+        ### otherwise change everything that matches a1 to a2
+      }else{
+        circuit[which(circuit==circuit[a[1]])]<-circuit[a[2]]}}
+  }
+  cat(concount,"\n")
+  jboxes[a,1]}
 ```
 
+
+```{r}
+p2<-onebigcircuit(jboxes,alldists)
+p2
+part2<-prod(p2)
+part2
+```
